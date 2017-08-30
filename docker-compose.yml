@@ -1,0 +1,66 @@
+---
+version: '2'
+services:
+
+  adminer:
+    image: adminer:4.3.1
+    ports:
+    - 80:8080
+    links:
+      - mysql
+      - pgsql
+      - sqlsrv
+
+  mysql:
+    image: mysql:5.7
+    environment:
+    - MYSQL_ROOT_PASSWORD=rootpass
+    - MYSQL_DATABASE=hogehoge
+    - MYSQL_USER=developer
+    - MYSQL_PASSWORD=pass
+    volumes:
+    - db-mysql:/var/lib/mysql
+    - ./mysql/conf.d/my.cnf:/etc/mysql/conf.d/my.cnf
+    - ./db/initdb.d:/docker-entrypoint-initdb.d
+    ports:
+    - 3306:3306
+
+  pgsql:
+    image: postgres:9.6.4
+    environment:
+    - POSTGRES_PASSWORD=rootpass
+    - POSTGRES_USER=root
+    - POSTGRES_DB=hogehoge
+    volumes:
+    - db-pgsql:/var/lib/pgsql
+    - ./db/initdb.d:/docker-entrypoint-initdb.d
+    ports:
+    - 5432:5432
+
+  sqlsrv:
+    image: microsoft/mssql-server-linux:ctp2-1
+    environment:
+    - SA_PASSWORD=P@55w0rd
+    - ACCEPT_EULA=Y
+    working_dir: /usr/share
+    volumes:
+    - ./sqlsrv:/usr/share
+    ports:
+    - 1433:1433
+
+  db-migrate:
+    build: ./phinx
+    volumes:
+    - .:/app
+    depends_on:
+    - mysql
+    links:
+    - mysql
+    - pgsql
+    - sqlsrv
+
+volumes:
+  db-mysql:
+    driver: local
+  db-pgsql:
+    driver: local
